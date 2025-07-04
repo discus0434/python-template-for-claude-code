@@ -284,8 +284,10 @@ make check                  # format, lint, typecheck, testを順番に実行
 make check-all              # pre-commitで全ファイルをチェック
 
 # GitHub操作
-make pr TITLE="タイトル" BODY="本文" [LABEL="ラベル"]      # PR作成
+make pr TITLE="タイトル" BODY="本文" [LABEL="ラベル"]      # PR作成（feature/masterブランチからは不可）
+make pr-list                                                  # 開いているPRの一覧表示
 make issue TITLE="タイトル" BODY="本文" [LABEL="ラベル"]   # イシュー作成
+make issue-list                                               # 開いているイシューの一覧表示
 
 # その他
 make clean                  # キャッシュファイルの削除
@@ -670,37 +672,32 @@ make test-cov
 
 ## FAQ
 
+### Q: `make pr` が "Cannot create PR from main/master branch" エラーになる
+
+新しいブランチを作成してから実行してください：
+```bash
+git checkout -b feature/your-feature-name
+# 変更をコミット
+git add .
+git commit -m "Your commit message"
+# PRを作成
+make pr TITLE="PR Title" BODY="PR Description"
+```
+
+### Q: `make issue` が認証エラーになる
+
+GitHub CLIの認証が必要です：
+```bash
+gh auth login
+# ブラウザまたはトークンで認証を完了させてください
+```
+
 ### ...随時追記してください...
 
 ## 詳細ガイドの参照
 
-以下の専用ガイドを必要に応じてインポートしてください。
-
-#### 機械学習プロジェクト
-
-機械学習プロジェクトの場合、@docs/ml-project-guide.md をインポートしてください。
-
-このガイドには以下が含まれます：
-- PyTorch, numpy, pandas の設定
-- Weights & Biases (wandb) の統合手順
-- Hydra による設定管理
-- GPU環境の最適化
-- 実験管理のベストプラクティス
-- データバージョニング戦略
-
-#### バックエンドAPI プロジェクト
-
-FastAPI を使用したバックエンドプロジェクトの場合、@docs/backend-project-guide.md をインポートしてください。
-
-このガイドには以下が含まれます：
-- FastAPI + Pydantic の設定
-- SQLAlchemy による非同期データベース操作
-- JWT認証とセキュリティ設定
-- API設計のベストプラクティス
-- Docker開発環境
-- プロダクション考慮事項
-
 ### カスタムガイドの追加
 
-プロジェクト固有の要件に応じて、追加のガイドを`docs/` ディレクトリに作成できます。
+プロジェクト固有の要件に応じて、追加のカスタムガイドを`docs/` ディレクトリに作成できます。
 例: フロントエンドプロジェクトのガイド(`docs/frontend-project-guide.md`), チーム固有のルール(`docs/team-specific-guide.md`)など
+カスタムガイドを追加した場合は、必ずこのCLAUDE.mdにその概要を追加してください。

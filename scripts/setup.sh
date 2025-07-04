@@ -105,6 +105,30 @@ check_github_cli() {
     fi
 }
 
+check_play_command() {
+    if ! command -v play &> /dev/null; then
+        print_warning "play command is not available. Installing sox for Claude Code hooks..."
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            print_step "Installing sox on macOS..."
+            brew install sox
+        elif [[ "$OSTYPE" == "linux"* ]]; then
+            print_step "Installing sox on Linux..."
+            sudo apt update
+            sudo apt install -y sox
+        else
+            print_warning "Unsupported OS for sox installation. Please install sox manually for Claude Code hooks."
+            return
+        fi
+        if command -v play &> /dev/null; then
+            print_success "play command installed successfully"
+        else
+            print_warning "Failed to install play command. Claude Code hooks may not work properly."
+        fi
+    else
+        print_success "play command already available"
+    fi
+}
+
 check_claude_code() {
     print_step "Installing Claude Code..."
     npm i -g @anthropic-ai/claude-code
@@ -240,6 +264,7 @@ main() {
     check_claude_code
     check_gemini_cli
     check_github_cli
+    check_play_command
 
     # Rename project if needed
     if [ -d "src/project_name" ]; then

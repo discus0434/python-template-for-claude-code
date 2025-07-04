@@ -1,4 +1,4 @@
-.PHONY: help test test-cov test-unit test-property test-integration format lint typecheck security audit check check-all benchmark profile setup pr issue clean
+.PHONY: help test test-cov test-unit test-property test-integration format lint typecheck security audit check check-all benchmark profile setup pr issue pr-list issue-list clean
 
 # デフォルトターゲット
 help:
@@ -20,8 +20,10 @@ help:
 	@echo "  benchmark    - パフォーマンスベンチマーク実行"
 	@echo "  check        - format, lint, typecheck, testを順番に実行"
 	@echo "  check-all    - pre-commitで全ファイルをチェック"
-	@echo "  pr           - PR作成 (TITLE=\"タイトル\" BODY=\"本文\" [LABEL=\"ラベル\"])"
-	@echo "  issue        - イシュー作成 (TITLE=\"タイトル\" BODY=\"本文\" [LABEL=\"ラベル\"])"
+	@echo "  pr           - PR作成 (TITLE=\"タイトル\" BODY=\"本文またはファイルパス\" [LABEL=\"ラベル\"])"
+	@echo "  pr-list      - 開いているPRの一覧表示"
+	@echo "  issue        - イシュー作成 (TITLE=\"タイトル\" BODY=\"本文またはファイルパス\" [LABEL=\"ラベル\"])"
+	@echo "  issue-list   - 開いているイシューの一覧表示"
 	@echo "  clean        - キャッシュファイルの削除"
 
 # セットアップ
@@ -91,13 +93,36 @@ pr:
 		echo "Error: BODY is required. Usage: make pr TITLE=\"タイトル\" BODY=\"本文\" [LABEL=\"ラベル\"]"; \
 		exit 1; \
 	fi
-	@export GH_PR_TITLE="$(TITLE)"; \
-	export GH_PR_BODY="$(BODY)"; \
-	export GH_PR_LABEL="$(LABEL)"; \
-	if [ -n "$$GH_PR_LABEL" ]; then \
-		gh pr create --title "$$GH_PR_TITLE" --body "$$GH_PR_BODY" --label "$$GH_PR_LABEL"; \
+	@# 現在のブランチを確認
+	@CURRENT_BRANCH=$$(git rev-parse --abbrev-ref HEAD); \
+	if [ "$$CURRENT_BRANCH" = "main" ] || [ "$$CURRENT_BRANCH" = "master" ]; then \
+		echo "Error: Cannot create PR from main/master branch."; \
+		echo "Please create a new branch first:"; \
+		echo "  git checkout -b feature/your-feature-name"; \
+		exit 1; \
+	fi
+	@# 変更がステージングされているか確認
+	@if ! git diff --cached --quiet; then \
+		echo "Warning: You have staged changes. Consider committing them first."; \
+	fi
+	@# 変更がコミットされていない場合の警告
+	@if ! git diff --quiet; then \
+		echo "Warning: You have uncommitted changes."; \
+	fi
+	@# ファイルを使って本文を渡すか、簡単な本文の場合は直接渡す
+	@if [ -f "$(BODY)" ]; then \
+		echo "Using file content for PR body: $(BODY)"; \
+		if [ -n "$(LABEL)" ]; then \
+			gh pr create --title "$(TITLE)" --body-file "$(BODY)" --label "$(LABEL)"; \
+		else \
+			gh pr create --title "$(TITLE)" --body-file "$(BODY)"; \
+		fi; \
 	else \
-		gh pr create --title "$$GH_PR_TITLE" --body "$$GH_PR_BODY"; \
+		if [ -n "$(LABEL)" ]; then \
+			gh pr create --title "$(TITLE)" --body "$(BODY)" --label "$(LABEL)"; \
+		else \
+			gh pr create --title "$(TITLE)" --body "$(BODY)"; \
+		fi; \
 	fi
 
 issue:
@@ -109,14 +134,42 @@ issue:
 		echo "Error: BODY is required. Usage: make issue TITLE=\"タイトル\" BODY=\"本文\" [LABEL=\"ラベル\"]"; \
 		exit 1; \
 	fi
-	@export GH_ISSUE_TITLE="$(TITLE)"; \
-	export GH_ISSUE_BODY="$(BODY)"; \
-	export GH_ISSUE_LABEL="$(LABEL)"; \
-	if [ -n "$$GH_ISSUE_LABEL" ]; then \
-		gh issue create --title "$$GH_ISSUE_TITLE" --body "$$GH_ISSUE_BODY" --label "$$GH_ISSUE_LABEL"; \
-	else \
-		gh issue create --title "$$GH_ISSUE_TITLE" --body "$$GH_ISSUE_BODY"; \
+	@# GitHub CLI が利用可能か確認
+	@if ! command -v gh >/dev/null 2>&1; then \
+		echo "Error: GitHub CLI (gh) is not installed."; \
+		echo "Please install it first: https://cli.github.com/"; \
+		exit 1; \
 	fi
+	@# 認証状態を確認
+	@if ! gh auth status >/dev/null 2>&1; then \
+		echo "Error: Not authenticated with GitHub."; \
+		echo "Please run: gh auth login"; \
+		exit 1; \
+	fi
+	@# ファイルを使って本文を渡すか、簡単な本文の場合は直接渡す
+	@if [ -f "$(BODY)" ]; then \
+		echo "Using file content for issue body: $(BODY)"; \
+		if [ -n "$(LABEL)" ]; then \
+			gh issue create --title "$(TITLE)" --body-file "$(BODY)" --label "$(LABEL)"; \
+		else \
+			gh issue create --title "$(TITLE)" --body-file "$(BODY)"; \
+		fi; \
+	else \
+		if [ -n "$(LABEL)" ]; then \
+			gh issue create --title "$(TITLE)" --body "$(BODY)" --label "$(LABEL)"; \
+		else \
+			gh issue create --title "$(TITLE)" --body "$(BODY)"; \
+		fi; \
+	fi
+
+# PRとイシューの一覧表示
+pr-list:
+	@echo "=== Open Pull Requests ==="
+	@gh pr list --state open || echo "No open pull requests found."
+
+issue-list:
+	@echo "=== Open Issues ==="
+	@gh issue list --state open || echo "No open issues found."
 
 # クリーンアップ
 clean:

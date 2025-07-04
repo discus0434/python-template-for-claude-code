@@ -73,7 +73,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["PLR2004", "PLR0913"]  # テストでは magic number とパラメータ数を許可
+"tests/*" = ["F401", "E402", "PLR2004", "PLR0913"]
 
 [tool.mypy]
 python_version = "3.12"
