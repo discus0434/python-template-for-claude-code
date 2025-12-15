@@ -107,7 +107,7 @@ jobs:
 
     - name: Upload test results
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: test-results-${{ matrix.os }}-${{ matrix.python-version }}
         path: test-results.xml
@@ -141,7 +141,7 @@ jobs:
   #       ls -la dist/
 
   #   - name: Upload distributions
-  #     uses: actions/upload-artifact@v4
+  #     uses: actions/upload-artifact@v6
   #     with:
   #       name: dist
   #       path: dist/
@@ -171,7 +171,7 @@ jobs:
   #       uv run sphinx-build -b html docs/ docs/_build/html
 
   #   - name: Upload docs
-  #     uses: actions/upload-artifact@v4
+  #     uses: actions/upload-artifact@v6
   #     with:
   #       name: docs
   #       path: docs/_build/html/
